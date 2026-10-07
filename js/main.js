@@ -1,5 +1,6 @@
 // ── Section loader ────────────────────────────────────────────────────────────
 const NAV_SRC = 'sections/nav.html';
+const FOOTER_SRC = 'sections/footer.html';
 
 const SECTIONS = [
   'sections/hero.html',
@@ -12,219 +13,162 @@ const SECTIONS = [
   'sections/skills.html',
   'sections/awards.html',
   'sections/connect.html',
-  'sections/footer.html',
 ];
 
+const load = src => fetch(src).then(r => {
+  if (!r.ok) throw new Error(`${src}: ${r.status}`);
+  return r.text();
+});
+
+function toFragment(html) {
+  const tpl = document.createElement('template');
+  tpl.innerHTML = html.trim();
+  return tpl.content;
+}
+
 async function loadSections() {
-  const [navHTML, ...sectionHTMLs] = await Promise.all([
-    fetch(NAV_SRC).then(r => r.text()),
-    ...SECTIONS.map(src => fetch(src).then(r => r.text())),
-  ]);
-
-  document.getElementById('navbar').innerHTML = navHTML;
-
   const mainContent = document.getElementById('main-content');
-  sectionHTMLs.forEach(html => {
-    const tpl = document.createElement('template');
-    tpl.innerHTML = html.trim();
-    mainContent.appendChild(tpl.content);
-  });
-
+  try {
+    const [navHTML, footerHTML, ...sectionHTMLs] = await Promise.all([
+      load(NAV_SRC), load(FOOTER_SRC), ...SECTIONS.map(load),
+    ]);
+    document.getElementById('navbar').innerHTML = navHTML;
+    sectionHTMLs.forEach(html => mainContent.appendChild(toFragment(html)));
+    mainContent.after(toFragment(footerHTML));
+  } catch (err) {
+    console.error(err);
+    mainContent.innerHTML =
+      '<p class="wrap" style="padding-block:8rem">This page loads its sections with fetch(), so it needs to be served over HTTP (e.g. <code>python -m http.server</code>) rather than opened from disk.</p>';
+    return;
+  }
   initApp();
 }
 
-// ── App init (runs after all sections are in the DOM) ─────────────────────────
 function initApp() {
-  initParticles();
-  initTypewriter();
   initNavbar();
   initMobileMenu();
+  initTheme();
   initScrollReveal();
-  initBackToTop();
-  initQuantumBtn();
+  initQuantumFact();
+  initBellShots();
 }
 
-// ── tsParticles ───────────────────────────────────────────────────────────────
-async function initParticles() {
-  await tsParticles.load('tsparticles', {
-    background: { color: { value: 'transparent' } },
-    fpsLimit: 60,
-    interactivity: {
-      events: {
-        onHover: { enable: true, mode: ['repulse', 'connect'] },
-        onClick: { enable: true, mode: 'push' },
-        resize: true,
-      },
-      modes: {
-        repulse: { distance: 100, duration: 0.4 },
-        connect: { distance: 80, links: { opacity: 0.5 }, radius: 60 },
-        push: { quantity: 2 },
-      },
-    },
-    particles: {
-      color: { value: ['#00f5ff', '#c026d3', '#22d3ee', '#f0f0f5'] },
-      links: { color: '#00f5ff', distance: 120, enable: true, opacity: 0.15, width: 1 },
-      collisions: { enable: false },
-      move: {
-        direction: 'none',
-        enable: true,
-        outModes: { default: 'bounce' },
-        random: true,
-        speed: 0.6,
-        straight: false,
-        attract: { enable: true, rotateX: 600, rotateY: 1200 },
-      },
-      number: { density: { enable: true, area: 900 }, value: 80 },
-      opacity: {
-        value: { min: 0.15, max: 0.6 },
-        animation: { enable: true, speed: 0.8, minimumValue: 0.1, sync: false },
-      },
-      shape: {
-        type: ['circle', 'char'],
-        options: {
-          char: [
-            { value: '|0⟩', font: 'Orbitron', style: '', weight: '400', fill: true },
-            { value: '|1⟩', font: 'Orbitron', style: '', weight: '400', fill: true },
-            { value: '⊗',   font: 'Orbitron', style: '', weight: '400', fill: true },
-          ],
-        },
-      },
-      size: {
-        value: { min: 1, max: 3 },
-        animation: { enable: true, speed: 2, minimumValue: 0.5, sync: false },
-      },
-    },
-    detectRetina: true,
-  });
-}
-
-// ── Typewriter ────────────────────────────────────────────────────────────────
-function initTypewriter() {
-  const lines = [
-    'Quantum Computing Researcher & AI Enthusiast',
-    'Navigating the Quantum Grid from Dhaka',
-    'IBM Qiskit Advocate | MIT iQuHack Winner',
-    'Open Source Contributor | Quantum Educator',
-  ];
-  let lineIdx = 0, charIdx = 0, deleting = false;
-  const tw = document.getElementById('typewriter-text');
-
-  function step() {
-    const line = lines[lineIdx];
-    if (!deleting) {
-      tw.textContent = line.slice(0, charIdx + 1);
-      charIdx++;
-      if (charIdx === line.length) { deleting = true; setTimeout(step, 2200); return; }
-      setTimeout(step, 48);
-    } else {
-      tw.textContent = line.slice(0, charIdx - 1);
-      charIdx--;
-      if (charIdx === 0) {
-        deleting = false;
-        lineIdx = (lineIdx + 1) % lines.length;
-        setTimeout(step, 400);
-        return;
-      }
-      setTimeout(step, 22);
-    }
-  }
-  setTimeout(step, 800);
-}
-
-// ── Navbar scroll + active link ───────────────────────────────────────────────
+// ── Navbar: background on scroll + active section ────────────────────────────
 function initNavbar() {
   const navbar = document.getElementById('navbar');
+  const onScroll = () => navbar.classList.toggle('scrolled', window.scrollY > 24);
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
 
-  window.addEventListener('scroll', () => {
-    navbar.classList.toggle('scrolled', window.scrollY > 40);
-  });
-
-  const navLinks = document.querySelectorAll('.nav-link');
-  const sectionEls = document.querySelectorAll('section[id]');
-
+  const links = document.querySelectorAll('.nav-link');
   const obs = new IntersectionObserver(entries => {
     entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        navLinks.forEach(l => l.classList.remove('active'));
-        const active = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
-        if (active) active.classList.add('active');
-      }
+      if (!entry.isIntersecting) return;
+      links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === `#${entry.target.id}`));
     });
-  }, { threshold: 0.35 });
+  }, { rootMargin: '-35% 0px -60% 0px' });
 
-  sectionEls.forEach(s => obs.observe(s));
+  document.querySelectorAll('main section[id]').forEach(s => obs.observe(s));
 }
 
-// ── Mobile hamburger ──────────────────────────────────────────────────────────
+// ── Mobile menu ──────────────────────────────────────────────────────────────
 function initMobileMenu() {
   const toggle = document.getElementById('menu-toggle');
   const menu   = document.getElementById('mobile-menu');
   if (!toggle || !menu) return;
 
-  toggle.addEventListener('click', () => {
-    toggle.classList.toggle('open');
-    menu.classList.toggle('open');
-  });
-  menu.querySelectorAll('a').forEach(a => {
-    a.addEventListener('click', () => {
-      toggle.classList.remove('open');
-      menu.classList.remove('open');
-    });
+  const setOpen = open => {
+    menu.classList.toggle('open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.textContent = open ? 'Close' : 'Menu';
+  };
+  toggle.addEventListener('click', () => setOpen(!menu.classList.contains('open')));
+  menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setOpen(false)));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setOpen(false); });
+}
+
+// ── Theme toggle (follows the OS until the visitor picks one) ────────────────
+function initTheme() {
+  const btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  const root = document.documentElement;
+  const isDark = () => root.getAttribute('data-theme')
+    ? root.getAttribute('data-theme') === 'dark'
+    : matchMedia('(prefers-color-scheme: dark)').matches;
+
+  btn.addEventListener('click', () => {
+    const next = isDark() ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
   });
 }
 
-// ── Scroll reveal ─────────────────────────────────────────────────────────────
+// ── Scroll reveal ────────────────────────────────────────────────────────────
 function initScrollReveal() {
+  const els = document.querySelectorAll('.reveal');
+  if (!('IntersectionObserver' in window)) { els.forEach(el => el.classList.add('visible')); return; }
   const obs = new IntersectionObserver(entries => {
     entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        setTimeout(() => entry.target.classList.add('visible'),
-          entry.target.dataset.delay || 0);
-        obs.unobserve(entry.target);
-      }
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('visible');
+      obs.unobserve(entry.target);
     });
-  }, { threshold: 0.1 });
-
-  document.querySelectorAll('.reveal, .reveal-left').forEach((el, i) => {
-    el.dataset.delay = (i % 4) * 80;
-    obs.observe(el);
-  });
+  }, { threshold: 0.08, rootMargin: '0px 0px -5% 0px' });
+  els.forEach(el => obs.observe(el));
 }
 
-// ── Back to top ───────────────────────────────────────────────────────────────
-function initBackToTop() {
-  const btn = document.getElementById('back-to-top');
-  window.addEventListener('scroll', () => btn.classList.toggle('show', window.scrollY > 600));
-  btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-}
-
-// ── Quantum Randomness ────────────────────────────────────────────────────────
-function initQuantumBtn() {
-  const facts = [
-    "⚛️ A qubit can exist in a superposition of |0⟩ and |1⟩ simultaneously, until you look at it. Schrödinger's bit.",
-    "🌀 Quantum entanglement allows two particles to be correlated instantly across any distance. Einstein called it 'spooky action at a distance.'",
-    "🔬 If a quantum computer were the size of a grain of sand, it could perform more computations simultaneously than there are atoms in the observable universe.",
-    "🎲 True randomness in nature? Look no further than quantum measurement. The outcome is fundamentally unpredictable.",
-    "🧲 Quantum tunneling is why the sun shines: protons tunnel through the Coulomb barrier to fuse in the solar core.",
-    "💻 Shor's algorithm can factor large numbers exponentially faster than any classical algorithm, making it a direct threat to RSA encryption.",
-    "🌊 The double-slit experiment revealed that particles interfere with themselves when unobserved, behaving like waves.",
-    "🔐 Quantum Key Distribution (QKD) uses the laws of physics to guarantee eavesdropping is always detectable. Security by nature.",
-    "🎭 The many-worlds interpretation says every quantum measurement spawns a new parallel universe. You're in all of them.",
-    "📡 Quantum teleportation has been demonstrated over 1,200 km via satellite. No information exceeds light speed, but the quantum state does transfer.",
+// ── Random note from my work ─────────────────────────────────────────────────
+function initQuantumFact() {
+  const notes = [
+    "Measure either half of a Bell pair and you get a random bit, but the two bits always agree. That is the whole circuit at the top of this page.",
+    "Bernstein-Vazirani finds an n-bit hidden string with a single query, where a classical computer needs n. It is the cleanest place I know to watch interference do real work, which is why I teach it.",
+    "Entanglement distillation spends many noisy Bell pairs to make a few good ones. I implemented two protocols for it, BBPSSW and DEJMPS, on real IonQ hardware at MIT iQuHack.",
+    "In my QCNN comparison on MNIST, the hybrid model finished 8.57% ahead of the classical CNN, at 90.54% accuracy. Promising, on a benchmark that is small and friendly.",
+    "Zero-noise extrapolation runs a circuit at deliberately higher noise levels, then extrapolates back to the noise-free answer. It is one of the four techniques in the Mitiq tutorial I wrote.",
+    "Pauli twirling turns messy coherent noise into simpler stochastic Pauli noise, which is much easier to mitigate. It is another of the techniques in that Mitiq tutorial.",
+    "Quantum state tomography rebuilds a state from measurements, and fidelity scores how close the rebuild is. 98% was the number from my QWorld internship.",
+    "In my Manim tunneling animation, the wave packet splits at the barrier: part reflects, part passes through, and you can watch the probability density divide.",
+    "One of my PennyLane fixes: the Tracker class printed as a raw memory address. A readable __repr__ is a tiny change that makes debugging much less painful.",
+    "A variational quantum circuit can act as the policy in reinforcement learning. In my energy-grid poster, it learns generator dispatch that keeps voltage stable while holding cost down.",
   ];
-  let lastIdx = -1;
-  const btn    = document.getElementById('quantum-btn');
-  const bubble = document.getElementById('fact-bubble');
-  if (!btn || !bubble) return;
+  let last = -1;
+  const btn  = document.getElementById('quantum-btn');
+  const text = document.getElementById('fact-text');
+  if (!btn || !text) return;
 
   btn.addEventListener('click', () => {
     let idx;
-    do { idx = Math.floor(Math.random() * facts.length); } while (idx === lastIdx);
-    lastIdx = idx;
-    bubble.classList.remove('show');
-    setTimeout(() => { bubble.textContent = facts[idx]; bubble.classList.add('show'); }, 200);
+    do { idx = Math.floor(Math.random() * notes.length); } while (idx === last);
+    last = idx;
+    text.classList.remove('show');
+    setTimeout(() => { text.textContent = notes[idx]; text.classList.add('show'); }, 180);
   });
 }
 
-// ── Boot ──────────────────────────────────────────────────────────────────────
+// ── Bell pair: run 100 shots ─────────────────────────────────────────────────
+// An ideal Bell pair measured in the computational basis: 00 or 11 with equal
+// probability, never 01 or 10. Sampled client-side; the note under the chart
+// says so.
+function initBellShots() {
+  const btn  = document.getElementById('shots-btn');
+  const note = document.getElementById('shots-note');
+  if (!btn) return;
+  const SHOTS = 100;
+  let runs = 0;
+
+  btn.addEventListener('click', () => {
+    const counts = { '00': 0, '01': 0, '10': 0, '11': 0 };
+    for (let i = 0; i < SHOTS; i++) counts[Math.random() < 0.5 ? '00' : '11']++;
+
+    Object.entries(counts).forEach(([k, n]) => {
+      document.querySelector(`.hist i[data-k="${k}"]`).style.width = `${(n / SHOTS) * 100}%`;
+      document.querySelector(`.hist [data-n="${k}"]`).textContent = n;
+    });
+    runs++;
+    btn.textContent = 'Run again';
+    note.textContent = `Run ${runs}: ${SHOTS} shots. 01 and 10 never occur. Simulated in your browser.`;
+  });
+}
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
 loadSections();
