@@ -1,61 +1,68 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Abdullah Al Omar Galib | Quantum Computing Researcher</title>
-  <meta name="description" content="Quantum Computing Researcher &amp; AI Enthusiast, Abdullah Al Omar Galib. Exploring the quantum grid from Dhaka, Bangladesh." />
+  <meta name="description" content="Abdullah Al Omar Galib is a quantum computing researcher and educator based in Dhaka, Bangladesh, working on quantum machine learning, error mitigation and open-source quantum software." />
+  <meta name="theme-color" content="#eff1f5" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#1e1e2e" media="(prefers-color-scheme: dark)" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="favicon.ico" sizes="48x48" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="canonical" href="https://ahkatlio.github.io/ahkatlio-grid/" />
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts -->
+  <meta property="og:title" content="Abdullah Al Omar Galib" />
+  <meta property="og:description" content="Quantum computing researcher and educator, Dhaka." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://ahkatlio.github.io/ahkatlio-grid/" />
+  <meta property="og:image" content="https://ahkatlio.github.io/ahkatlio-grid/Images/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Abdullah Al Omar Galib, quantum computing researcher and educator" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Abdullah Al Omar Galib",
+    "jobTitle": "Quantum computing researcher",
+    "url": "https://ahkatlio.github.io/ahkatlio-grid/",
+    "image": "https://ahkatlio.github.io/ahkatlio-grid/Images/photo_cutout.webp",
+    "affiliation": { "@type": "CollegeOrUniversity", "name": "BRAC University" },
+    "address": { "@type": "PostalAddress", "addressLocality": "Dhaka", "addressCountry": "BD" },
+    "sameAs": [
+      "https://orcid.org/0009-0009-3325-9426",
+      "https://github.com/ahkatlio",
+      "https://www.linkedin.com/in/abdullah-al-omar-galib-30b6b1258/"
+    ]
+  }
+  </script>
+
+  <!-- Apply saved theme before first paint to avoid a flash -->
+  <script>
+    document.documentElement.classList.add('js');
+    try {
+      var t = localStorage.getItem('theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:wght@300;400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <!-- tsParticles -->
-  <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.12.0/tsparticles.bundle.min.js"></script>
-  <!-- Custom styles -->
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            'void':     '#050514',
-            'cyan':     '#00f5ff',
-            'magenta':  '#c026d3',
-            'eblue':    '#22d3ee',
-            'softwhite':'#f0f0f5',
-          },
-          fontFamily: {
-            orbitron: ['Orbitron', 'sans-serif'],
-            exo:      ['Exo 2', 'sans-serif'],
-            inter:    ['Inter', 'system-ui', 'sans-serif'],
-          },
-        },
-      },
-    };
-  </script>
 </head>
 <body>
-
-  <!-- Background layers -->
-  <div class="starfield"></div>
-  <div id="tsparticles"></div>
-  <div class="quantum-grid"></div>
+  <a class="skip" href="#main-content">Skip to content</a>
 
   <!-- Navigation shell (content loaded from sections/nav.html) -->
-  <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 bg-transparent"></nav>
+  <nav id="navbar" aria-label="Primary"></nav>
 
   <!-- Main content (sections loaded by js/main.js) -->
-  <div id="main-content"></div>
+  <main id="main-content"></main>
 
-  <!-- Back to top button -->
-  <button id="back-to-top" aria-label="Back to top">↑</button>
-
-  <!-- App logic -->
   <script src="js/main.js"></script>
-
 </body>
 </html>
